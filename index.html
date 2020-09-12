@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover" />
+    <!-- 引入样式文件 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@2.10/lib/index.css" />
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- 引入 Vue 和 Vant 的 JS 文件 -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/vant@2.10/lib/vant.min.js"></script>
+    <!-- lib.flexible -->
+    <meta name="flexible" content="initial-dpr=2,maximum-dpr=3" />
+    <script src="http://g.tbcdn.cn/mtb/lib-flexible/0.3.4/??flexible_css.js,flexible.js"></script>
+    <title>简单销售统计</title>
+</head>
+<style>
+    html {
+        background-color: #F7F8FA;
+    }
+
+    .float-btn {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+    }
+
+    .result-text {
+        padding: 0.4rem;
+        text-align: right;
+        font-size: 0.5rem;
+        color: #FF976A;
+    }
+</style>
+
+<body>
+    <div id="app">
+        <van-nav-bar title="销售统计"></van-nav-bar>
+        <van-empty description="暂无数据" v-if="totalList.length == 0"></van-empty>
+        <van-popup v-model="showAddPop" position="top" round get-container="body" @closed="onPopClose">
+            <van-form @submit="onSubmit" ref="form">
+                <div>
+                    <van-field name="generation" label="代">
+                        <template #input>
+                            <van-radio-group v-model="dataform.generation" direction="horizontal">
+                                <van-radio :name="item.value" v-for="(item,index) in generationOptions" :key="index"
+                                    icon-size="12px">
+                                    {{item.label}}</van-radio>
+                            </van-radio-group>
+                        </template>
+                    </van-field>
+                </div>
+                <div>
+                    <van-field v-model="dataform.name" name="name" label="名称" placeholder="商品名称"></van-field>
+                </div>
+                <div>
+                    <van-field name='he' label="数量（盒）">
+
+                        <template #input>
+                            <van-stepper v-model="dataform.he" min="0" />
+                        </template>
+                    </van-field>
+                </div>
+                <div>
+                    <van-field name='ge' label="数量（颗）">
+                        <template #input>
+                            <van-stepper v-model="dataform.ge" min="0" />
+                        </template>
+                    </van-field>
+                </div>
+                <div style="margin: 16px;display:flex;justify-content: space-around ;">
+                    <van-button type="primary" native-type="submit">
+                        提交
+                    </van-button>
+                    <van-button type="danger" @click.prevent="onDelete()">删除</van-button>
+                </div>
+            </van-form>
+        </van-popup>
+        <div class="float-btn">
+            <van-button icon="plus" round type="primary" @click="openForm()"></van-button>
+        </div>
+        <div v-if="firstList.length > 0">
+            <van-cell-group title="一代">
+                <van-cell v-for="item in firstList" :title="item.name" @click="openForm(item)"
+                    :value="item.he+'（盒）      '+item.ge+'(颗)'" size="large"></van-cell>
+            </van-cell-group>
+            <div class="result-text">{{firstResult}}</div>
+        </div>
+        <div v-if="secondList.length > 0">
+            <van-cell-group title="二代">
+                <van-cell v-for="item in secondList" :title="item.name" @click="openForm(item)"
+                    :value="item.he+'（盒）      '+item.ge+'(颗)'" size="large"></van-cell>
+            </van-cell-group>
+            <div class="result-text">{{secondResult}}</div>
+        </div>
+        <div v-if="thirdList.length > 0">
+            <van-cell-group title="三代">
+                <van-cell v-for="item in thirdList" :title="item.name" @click="openForm(item)"
+                    :value="item.he+'（盒）      '+item.ge+'(颗)'" size="large"></van-cell>
+            </van-cell-group>
+            <div class="result-text">{{thirdList}}</div>
+        </div>
+        <div v-if="fourthList.length > 0">
+            <van-cell-group title="四代">
+                <van-cell v-for="item in fourthList" :title="item.name" @click="openForm(item)"
+                    :value="item.he+'（盒）      '+item.ge+'(颗)'" size="large"></van-cell>
+            </van-cell-group>
+            <div class="result-text">{{fourthList}}</div>
+        </div>
+        <!-- 开启 safe-area-inset-bottom 属性 -->
+        <van-number-keyboard safe-area-inset-bottom></van-number-keyboard>
+    </div>
+</body>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            generationOptions: [
+                { label: '一代', value: 1 },
+                { label: '二代', value: 2 },
+                { label: '三代', value: 3 },
+                { label: '四代', value: 4 },
+            ],
+            totalList: [],
+            showAddPop: false,
+            dataform: {
+                id: '',
+                name: '',
+                generation: 1,
+                he: 0,
+                ge: 0,
+                change: false,
+                gift: false
+            }
+        },
+        methods: {
+            onPopClose() {
+                this.dataform.name = '';
+                this.dataform.he = 0;
+                this.dataform.ge = 0;
+                this.dataform.id = '';
+            },
+            openForm(item) {
+                if (item) {
+                    this.dataform ={...this.dataform, ...item};
+                }
+                this.showAddPop = true;
+            },
+            onSubmit(values) {
+                if (!values.name) {
+                    vant.Toast('请填写商品名称');
+                    return;
+                }
+                if (this.dataform.id == '') {
+                    values.id = this.getUuid();
+                }
+                let findItem = this.totalList.find(item => item.name == values.name);
+                if (findItem) {
+                    findItem.he += values.he;
+                    findItem.ge += values.ge;
+                } else {
+                    this.totalList.push(values)
+                }
+                this.showAddPop = false;
+                console.log('submit', values);
+            },
+            onDelete() {
+                this.totalList = this.totalList.filter(item => item.id != this.dataform.id);
+                this.showAddPop = false;
+                return;
+            },
+            getUuid() {
+                var s = [];
+                var hexDigits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                for (var i = 0; i < 36; i++) {
+                    s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1)
+                }
+                s[14] = "4"
+                s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1)
+                s[8] = s[13] = s[18] = s[23] = "-"
+                let uuid = s.join("")
+                return uuid;
+            }
+        },
+        computed: {
+            firstList() {
+                return this.totalList.filter(item => item.generation == 1);
+            },
+            secondList() {
+                return this.totalList.filter(item => item.generation == 2);
+            },
+            thirdList() {
+                return this.totalList.filter(item => item.generation == 3);
+            },
+            fourthList() {
+                return this.totalList.filter(item => item.generation == 4);
+            },
+            firstResult() {
+                let he = 0;
+                let ge = 0;
+                this.firstList.forEach(item => {
+                    he += item.he;
+                    ge += item.ge;
+                })
+                return `一代共销售 ${he}盒   ${ge}颗`
+            },
+            secondResult() {
+                let he = 0;
+                let ge = 0;
+                this.secondList.forEach(item => {
+                    he += item.he;
+                    ge += item.ge;
+                })
+                return `二代共销售 ${he}盒   ${ge}颗`
+            },
+            thirdResult() {
+                let he = 0;
+                let ge = 0;
+                this.thirdList.forEach(item => {
+                    he += item.he;
+                    ge += item.ge;
+                })
+                return `三代共销售 ${he}盒   ${ge}颗`
+            },
+            fourthResult() {
+                let he = 0;
+                let ge = 0;
+                this.fourthList.forEach(item => {
+                    he += item.he;
+                    ge += item.ge;
+                })
+                return `四代共销售 ${he}盒   ${ge}颗`
+            },
+        },
+    })
+</script>
+
+</html>
